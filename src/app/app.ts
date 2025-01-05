@@ -11,13 +11,19 @@ import {
     MeshBasicMaterial,
     ShapeGeometry,
     BoxGeometry,
-    DoubleSide,
-    MeshNormalMaterial
+    DoubleSide, FrontSide,
+    MeshLambertMaterial,
+    MeshPhongMaterial,
+    AmbientLight
 } from "three";
 import { Modal } from "./modal/modal";
 import { FontLoader, Font } from "three/examples/jsm/loaders/FontLoader";
 import { ModalOptions } from "./modal/modaloptions";
 import { SetModalTitleFont, FontNameHelvetikerBold, } from "./constants";
+import { GetModalTitleFont } from "./constants";
+import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry";
+import { DiagramItem } from "./items/diagramitem";
+import { Software } from "./items/software";
 
 export class App {
 
@@ -30,15 +36,18 @@ export class App {
     private _mouseDownMoveStartPosition: Vector2 | undefined;
     private readonly _defaultCameraPosition: Vector3;
 
-    public readonly DefaultModalOptions: ModalOptions = new ModalOptions(0, 0);
+    public readonly defaultModalOptions: ModalOptions = new ModalOptions(0, 0);
+    public readonly diagramItems: Array<DiagramItem> = [];
 
     constructor(canvasElem: HTMLCanvasElement, width: number, height: number) {
         // set up misc stuff
         this._raycaster = new Raycaster();
 
         const fontLoader = new FontLoader();
+
         fontLoader.load(FontNameHelvetikerBold, (font: Font) => {
             SetModalTitleFont(font);
+            this.afterFontsLoaded();
         });
 
         // set up up scene/camera/controls/etc
@@ -61,14 +70,21 @@ export class App {
         this._controls.target.set(0, 0, 0);
         this._controls.update();
 
+        const lit = new AmbientLight();
+        this._scene.add(lit);
+
         // add cube
-        const cubeGeo = new BoxGeometry(2, 2, 2, 1, 1, 1);
-        const cubeMat = new MeshNormalMaterial({ side: DoubleSide });
-        const cubeMesh = new Mesh(cubeGeo, cubeMat);
+        // const cubeGeo = new BoxGeometry(2, 2, 2, 1, 1, 1);
+        // const cubeMat = new MeshLambertMaterial({ color: 0x0000ff, transparent: true, opacity: 0.4 });
+        // const cubeMesh = new Mesh(cubeGeo, cubeMat);
 
-        cubeMesh.position.set(0, 0, 0);
-        this._scene.add(cubeMesh);
+        // cubeMesh.position.set(0, 0, 0);
+        // this._scene.add(cubeMesh);
 
+        // add software
+        const sw = new Software({ labelText: "Software" });
+        this.diagramItems.push(sw);
+        this._scene.add(sw);
 
         // get going
         this.resize(width, height);
@@ -78,6 +94,15 @@ export class App {
         window.addEventListener('mousedown', this.onMouseDown.bind(this), false);
         window.addEventListener('mouseup', this.onMouseUp.bind(this), false);
         window.addEventListener('mousemove', this.onMouseMove.bind(this), false);
+    }
+
+    private afterFontsLoaded() {
+
+        if (this.diagramItems) {
+            this.diagramItems.forEach(di => {
+                di.drawText();
+            });
+        }
     }
 
     get Scene(): Scene { return this._scene; }
@@ -99,7 +124,13 @@ export class App {
     }
 
     private onMouseMove(event: MouseEvent) {
-        //
+        if (event && event.buttons && (event.buttons == 1 || event.buttons == 2 || event.buttons == 3)) {
+            // mouse moving while primary button, secondary button, or both is down - orbit rotate or pan
+            // reposition all diagram item labels to face the camera
+            this.diagramItems.forEach(di => {
+                di.rotateLabelTextToFaceCamera(this._camera);
+            });
+        }
     }
 
     private onMouseUp(event: MouseEvent) {
@@ -115,7 +146,7 @@ export class App {
         }
     }
 
-    public ShowModal(modal: Modal) {
+    public showModal(modal: Modal) {
         if (this._activeModal) {
             // destroy existing modal
             this._scene.remove(this._activeModal);
@@ -151,9 +182,9 @@ export class App {
         this._scene.add(modal);
 
         // disable camera movement (simulating a 2d page)
-        // this._controls.enableRotate = false;
-        // this._controls.enablePan = false;
-        // this._controls.enableZoom = false;
+        this._controls.enableRotate = false;
+        this._controls.enablePan = false;
+        this._controls.enableZoom = false;
     }
 
     private getMouseCurrentPosition(event: MouseEvent): Vector2 {
