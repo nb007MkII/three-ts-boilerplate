@@ -18,13 +18,23 @@ export class DiagramItem extends Group {
 	private _labelTextMeshDimensions: Vector3 | undefined;
 	private _labelTextMargin: number = 0.5;
 	private _objectContainingLabel: Object3D;
+	private _diagramObjects: Array<Object3D> = [];
 
-	constructor(objectContainingLabel: Object3D, options?: DiagramItemOptions) {
+	constructor(objectContainingLabel: Object3D,
+		options?: DiagramItemOptions,
+		diagramObjects?: Array<Object3D>) {
 
 		super();
 
 		this.add(objectContainingLabel);
 		this._objectContainingLabel = objectContainingLabel;
+		this._diagramObjects.push(objectContainingLabel);
+
+		if (diagramObjects) {
+			const otherDiagramObjects = diagramObjects.filter(dO => dO != objectContainingLabel);
+			otherDiagramObjects.forEach(odo => { this.add(odo); });
+			this._diagramObjects.push(...otherDiagramObjects);
+		}
 
 		if (options) {
 			if (options.labelText) {
@@ -129,8 +139,10 @@ export class DiagramItem extends Group {
 
 	public rotateLabelTextToFaceCamera(camera: Camera) {
 		if (this._labelTextMesh && this._labelTextMeshDimensions) {
+			// turn label to face camera
 			this._labelTextMesh.rotation.copy(camera.rotation);
-			this._labelTextMesh.updateMatrix();
+
+			// reposition text so that it appears to be centered in the shape
 		}
 	}
 }

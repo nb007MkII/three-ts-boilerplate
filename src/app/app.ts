@@ -23,7 +23,7 @@ import { SetModalTitleFont, FontNameHelvetikerBold, } from "./constants";
 import { GetModalTitleFont } from "./constants";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry";
 import { DiagramItem } from "./items/diagramitem";
-import { Software } from "./items/software";
+import { System } from "./items/system";
 
 export class App {
 
@@ -73,18 +73,19 @@ export class App {
         const lit = new AmbientLight();
         this._scene.add(lit);
 
-        // add cube
-        // const cubeGeo = new BoxGeometry(2, 2, 2, 1, 1, 1);
-        // const cubeMat = new MeshLambertMaterial({ color: 0x0000ff, transparent: true, opacity: 0.4 });
-        // const cubeMesh = new Mesh(cubeGeo, cubeMat);
+        // add system
+        const sys1 = new System({ labelText: "System 1" });
+        this.diagramItems.push(sys1);
+        this._scene.add(sys1);
 
-        // cubeMesh.position.set(0, 0, 0);
-        // this._scene.add(cubeMesh);
+        sys1.position.setX(-30);
 
-        // add software
-        const sw = new Software({ labelText: "Software" });
-        this.diagramItems.push(sw);
-        this._scene.add(sw);
+        // add another system
+        const sys2 = new System({ labelText: "System 2" });
+        this.diagramItems.push(sys2);
+        this._scene.add(sys2);
+
+        sys2.position.setX(30);
 
         // get going
         this.resize(width, height);
